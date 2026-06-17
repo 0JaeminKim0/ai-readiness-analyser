@@ -1,20 +1,19 @@
 {
-  "name": "webapp",
+  "name": "ai-readiness-diagnostic",
+  "version": "1.0.0",
+  "description": "데이터 AI Readiness 자가진단 - PwC",
   "type": "module",
+  "main": "server/index.js",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
-    "hono": "^4.12.23"
-  },
-  "devDependencies": {
-    "@hono/vite-build": "^1.2.0",
-    "@hono/vite-dev-server": "^0.25.2",
-    "vite": "^6.3.5",
-    "wrangler": "^4.4.0"
+    "@anthropic-ai/sdk": "^0.32.1",
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.21.0"
   }
 }

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>데이터 AI Readiness 자가진단 | PwC</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --pwc-orange:#E0301E;       /* PwC primary red-orange */
+    --pwc-orange-2:#EB8C00;     /* PwC amber */
+    --pwc-rose:#D04A02;         /* deep orange */
+    --ink:#2D2D2D; --sub:#5A6473; --line:#E3E3E3; --page:#F5F5F5; --card:#fff;
+    --ok:#2E9E6B;
+    --font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);font-family:var(--font);line-height:1.55}
+  .wrap{max-width:780px;margin:0 auto;padding:0 18px 80px}
+  /* ---- PwC header ---- */
+  .topbar{background:#fff;border-bottom:4px solid var(--pwc-orange);position:sticky;top:0;z-index:10}
+  .topbar-inner{max-width:780px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;gap:14px}
+  .pwc-logo{display:flex;flex-direction:column;line-height:1}
+  .pwc-word{font-weight:800;font-size:30px;letter-spacing:-1px;color:#000}
+  .pwc-bars{display:flex;gap:3px;margin-bottom:5px}
+  .pwc-bars span{width:13px;height:13px;display:block;transform:skewX(-12deg)}
+  .b1{background:#FFB600}.b2{background:#EB8C00}.b3{background:var(--pwc-rose)}.b4{background:var(--pwc-orange)}
+  .topbar-title{font-size:14px;color:var(--sub);border-left:1px solid var(--line);padding-left:14px}
+  .topbar-title b{color:var(--ink);display:block;font-size:15px}
+
+  .hero{background:linear-gradient(135deg,var(--pwc-rose),var(--pwc-orange) 60%,var(--pwc-orange-2));
+        color:#fff;border-radius:16px;padding:30px 26px;margin-top:24px;box-shadow:0 8px 28px rgba(224,48,30,.18)}
+  .hero h1{margin:0 0 8px;font-size:24px;font-weight:800;letter-spacing:-.5px}
+  .hero p{margin:0;opacity:.95;font-size:14.5px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-top:18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card h2{margin:0 0 4px;font-size:18px}
+  .muted{color:var(--sub);font-size:13.5px;margin:0 0 16px}
+
+  label.fld{display:block;margin-bottom:14px}
+  label.fld .lab{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+  label.fld .req{color:var(--pwc-orange);margin-left:3px}
+  input,select,textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-size:14.5px;font-family:inherit;background:#fff;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pwc-orange)}
+  textarea{min-height:90px;resize:vertical}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+
+  .opt-card{border:1.5px solid var(--line);border-radius:11px;padding:14px 15px;cursor:pointer;display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;transition:.15s;background:#fff}
+  .opt-card:hover{border-color:var(--pwc-orange-2)}
+  .opt-card.sel{border-color:var(--pwc-orange);background:#FFF6F3;box-shadow:0 0 0 3px rgba(224,48,30,.08)}
+  .opt-ico{font-size:24px;line-height:1}
+  .opt-body b{display:block;font-size:15px}
+  .opt-body span{font-size:13px;color:var(--sub)}
+
+  .q-block{border-top:1px solid var(--line);padding:18px 0 4px}
+  .q-block:first-child{border-top:none}
+  .q-text{font-weight:700;font-size:15px;margin-bottom:12px}
+  .q-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--pwc-rose);background:#FFF1EC;border-radius:6px;padding:2px 8px;margin-bottom:8px}
+  .scale{display:flex;flex-direction:column;gap:8px}
+  .scale .opt{border:1.5px solid var(--line);border-radius:9px;padding:10px 13px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px;transition:.12s}
+  .scale .opt:hover{border-color:var(--pwc-orange-2)}
+  .scale .opt.sel{border-color:var(--pwc-orange);background:#FFF6F3;font-weight:600}
+  .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex:none}
+  .opt.sel .dot{border-color:var(--pwc-orange);background:var(--pwc-orange);box-shadow:inset 0 0 0 3px #fff}
+
+  .btn{background:var(--pwc-orange);color:#fff;border:none;border-radius:10px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+  .btn:hover{background:#C42A1A}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-ghost{background:#fff;color:var(--pwc-orange);border:1.5px solid var(--pwc-orange)}
+  .btn-row{display:flex;justify-content:space-between;gap:12px;margin-top:22px}
+
+  .prog{height:7px;background:var(--line);border-radius:99px;overflow:hidden;margin:18px 0 4px}
+  .prog>i{display:block;height:100%;background:linear-gradient(90deg,var(--pwc-orange),var(--pwc-orange-2));transition:width .3s}
+  .prog-lab{font-size:12px;color:var(--sub);text-align:right}
+
+  /* result */
+  .lvl-badge{display:inline-flex;align-items:baseline;gap:8px;background:#FFF6F3;border:1.5px solid var(--pwc-orange);border-radius:12px;padding:12px 18px}
+  .lvl-badge b{font-size:30px;color:var(--pwc-orange)}
+  .dimbar{margin:10px 0}
+  .dimbar .row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+  .dimbar .track{height:9px;background:var(--line);border-radius:99px;overflow:hidden}
+  .dimbar .track>i{display:block;height:100%;background:var(--pwc-orange-2)}
+  .report{font-size:14.5px;line-height:1.7}
+  .report h2{font-size:17px;border-bottom:2px solid var(--pwc-orange);padding-bottom:5px;margin-top:24px}
+  .report h3{font-size:15px;color:var(--pwc-rose);margin-top:18px}
+  .report ul{padding-left:20px}
+  .spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--pwc-orange);border-radius:50%;animation:s 1s linear infinite;margin:30px auto}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .footer{text-align:center;color:var(--sub);font-size:12px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="pwc-logo">
+      <div class="pwc-bars"><span class="b1"></span><span class="b2"></span><span class="b3"></span><span class="b4"></span></div>
+      <div class="pwc-word">pwc</div>
+    </div>
+    <div class="topbar-title"><b>데이터 AI Readiness</b>자가진단</div>
+  </div>
+</div>
+<div id="root"></div>
+<script type="text/babel" data-type="script" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+// 아주 가벼운 마크다운 렌더러 (h2/h3/ul/li/strong/blockquote/p)
+function md(src){
+  if(!src) return "";
+  const esc = s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const lines = src.split("\n"); let html=""; let inUl=false;
+  const closeUl=()=>{ if(inUl){html+="</ul>";inUl=false;} };
+  for(let raw of lines){
+    let l = raw.trimEnd();
+    if(/^### /.test(l)){closeUl(); html+="<h3>"+inline(esc(l.slice(4)))+"</h3>";continue;}
+    if(/^## /.test(l)){closeUl(); html+="<h2>"+inline(esc(l.slice(3)))+"</h2>";continue;}
+    if(/^# /.test(l)){closeUl(); html+="<h2>"+inline(esc(l.slice(2)))+"</h2>";continue;}
+    if(/^> /.test(l)){closeUl(); html+="<blockquote style='border-left:4px solid #EB8C00;margin:10px 0;padding:6px 14px;background:#FFF8F2;color:#5A6473'>"+inline(esc(l.slice(2)))+"</blockquote>";continue;}
+    if(/^[-*] /.test(l)){ if(!inUl){html+="<ul>";inUl=true;} html+="<li>"+inline(esc(l.slice(2)))+"</li>";continue;}
+    if(l.trim()===""){closeUl(); continue;}
+    closeUl(); html+="<p>"+inline(esc(l))+"</p>";
+  }
+  closeUl();
+  function inline(s){return s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");}
+  return html;
+}
+
+function App(){
+  const [cfg,setCfg]=useState(null);
+  const [step,setStep]=useState("intake"); // intake | goal | env | quiz | loading | result
+  const [intake,setIntake]=useState({});
+  const [goal,setGoal]=useState(null);
+  const [envs,setEnvs]=useState([]);
+  const [answers,setAnswers]=useState({});
+  const [result,setResult]=useState(null);
+  const [err,setErr]=useState(null);
+  const startRef = useMemo(()=>({t:Date.now()}),[]);
+
+  useEffect(()=>{ fetch("/api/config").then(r=>r.json()).then(setCfg).catch(()=>setErr("설정 로드 실패")); },[]);
+  if(!cfg) return <div className="wrap"><div className="spin"></div></div>;
+
+  // 노출 질문 필터
+  const visibleQuestions = cfg.QUESTIONS.filter(q=>{
+    const trackOk = q.track==="both" || goal==="both" || q.track===goal;
+    const envOk = q.envs.includes("*") || q.envs.some(e=>envs.includes(e));
+    return trackOk && envOk;
+  });
+  const scored = visibleQuestions.filter(q=>q.type!=="text");
+  const answeredScored = scored.filter(q=>answers[q.id]!=null).length;
+  const progress = scored.length? Math.round(answeredScored/scored.length*100):0;
+
+  // intake 검증
+  const intakeOk = cfg.INTAKE_FIELDS.filter(f=>f.required).every(f=>intake[f.id] && String(intake[f.id]).trim());
+
+  async function submit(){
+    setStep("loading"); setErr(null);
+    try{
+      const res = await fetch("/api/submit",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({intake,goal,envs,answers,duration_ms:Date.now()-startRef.t})
+      });
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error||"제출 실패");
+      setResult(data); setStep("result");
+      window.scrollTo(0,0);
+    }catch(e){ setErr(String(e.message||e)); setStep("quiz"); }
+  }
+
+  return (
+  <div className="wrap">
+    {step==="intake" && (
+      <div className="hero"><h1>우리 회사 데이터, AI 쓸 준비 됐을까요?</h1>
+        <p>5분이면 끝나는 자가진단으로 데이터 성숙도를 레벨로 확인하고, 맞춤 로드맵을 받아보세요.</p></div>
+    )}
+
+    {/* STEP: intake */}
+    {step==="intake" && (
+      <div className="card">
+        <h2>시작 전 기본 정보</h2>
+        <p className="muted">결과 회신과 진단 정확도를 위해 입력해 주세요. <span style={{color:"var(--pwc-orange)"}}>*</span> 필수</p>
+        <div className="grid2">
+          {cfg.INTAKE_FIELDS.map(f=>(
+            <label className="fld" key={f.id} style={f.id==="target_process"?{gridColumn:"1 / -1"}:{}}>
+              <span className="lab">{f.label}{f.required && <span className="req">*</span>}</span>
+              {f.type==="select"
+                ? <select value={intake[f.id]||""} onChange={e=>setIntake({...intake,[f.id]:e.target.value})}>
+                    <option value="">선택</option>
+                    {f.options.map(o=><option key={o} value={o}>{o}</option>)}
+                  </select>
+                : <input type={f.type} placeholder={f.placeholder||""} value={intake[f.id]||""}
+                    onChange={e=>setIntake({...intake,[f.id]:e.target.value})}/>}
+            </label>
+          ))}
+        </div>
+        <div className="btn-row"><span/>
+          <button className="btn" disabled={!intakeOk} onClick={()=>{setStep("goal");window.scrollTo(0,0);}}>다음 →</button>
+        </div>
+      </div>
+    )}
+
+    {/* STEP: goal */}
+    {step==="goal" && (
+      <div className="card">
+        <h2>어떤 AI를 도입하고 싶으신가요?</h2>
+        <p className="muted">목적에 따라 진단 질문이 달라집니다.</p>
+        {cfg.GOALS.map(g=>(
+          <div key={g.id} className={"opt-card"+(goal===g.id?" sel":"")} onClick={()=>setGoal(g.id)}>
+            <div className="opt-ico">{g.icon}</div>
+            <div className="opt-body"><b>{g.label}</b><span>{g.desc}</span></div>
+          </div>
+        ))}
+        <div className="btn-row">
+          <button className="btn btn-ghost" onClick={()=>setStep("intake")}>← 이전</button>
+          <button className="btn" disabled={!goal} onClick={()=>{setStep("env");window.scrollTo(0,0);}}>다음 →</button>
+        </div>
+      </div>
+    )}
+
+    {/* STEP: env */}
+    {step==="env" && (
+      <div className="card">
+        <h2>현재 데이터는 주로 어디에 있나요?</h2>
+        <p className="muted">해당하는 환경을 모두 선택하세요. 선택한 환경에 맞는 질문만 보여드립니다.</p>
+        {cfg.ENVS.map(e=>{
+          const sel=envs.includes(e.id);
+          return <div key={e.id} className={"opt-card"+(sel?" sel":"")}
+            onClick={()=>setEnvs(sel?envs.filter(x=>x!==e.id):[...envs,e.id])}>
+            <div className="opt-ico">{e.icon}</div>
+            <div className="opt-body"><b>{e.label}</b><span>{e.desc}</span></div>
+          </div>;
+        })}
+        <div className="btn-row">
+          <button className="btn btn-ghost" onClick={()=>setStep("goal")}>← 이전</button>
+          <button className="btn" disabled={!envs.length} onClick={()=>{setStep("quiz");window.scrollTo(0,0);}}>진단 시작 →</button>
+        </div>
+      </div>
+    )}
+
+    {/* STEP: quiz */}
+    {step==="quiz" && (
+      <div className="card">
+        <h2>진단 질문</h2>
+        <div className="prog"><i style={{width:progress+"%"}}/></div>
+        <div className="prog-lab">{answeredScored} / {scored.length} 문항</div>
+        {err && <p style={{color:"var(--pwc-orange)",fontSize:13}}>⚠️ {err}</p>}
+        {visibleQuestions.map(q=>(
+          <div className="q-block" key={q.id}>
+            {q.dim && <span className="q-tag">{cfg.DIMS[q.dim]?.name}</span>}
+            <div className="q-text">{q.q}</div>
+            {q.type==="text"
+              ? <textarea placeholder={q.placeholder||""} value={answers[q.id]||""}
+                  onChange={e=>setAnswers({...answers,[q.id]:e.target.value})}/>
+              : <div className="scale">
+                  {q.options.map(o=>{
+                    const sel=Number(answers[q.id])===o.score;
+                    return <div key={o.score} className={"opt"+(sel?" sel":"")}
+                      onClick={()=>setAnswers({...answers,[q.id]:o.score})}>
+                      <span className="dot"/>{o.label}
+                    </div>;
+                  })}
+                </div>}
+          </div>
+        ))}
+        <div className="btn-row">
+          <button className="btn btn-ghost" onClick={()=>setStep("env")}>← 이전</button>
+          <button className="btn" disabled={answeredScored<scored.length} onClick={submit}>
+            {answeredScored<scored.length? `미응답 ${scored.length-answeredScored}문항` : "결과 보기 →"}
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* STEP: loading */}
+    {step==="loading" && (
+      <div className="card" style={{textAlign:"center"}}>
+        <div className="spin"></div>
+        <h2>AI가 결과를 분석하고 있어요</h2>
+        <p className="muted">점수 계산 + 맞춤 평가 생성 중입니다. 잠시만 기다려 주세요.</p>
+      </div>
+    )}
+
+    {/* STEP: result */}
+    {step==="result" && result && (
+      <Result result={result} cfg={cfg} intake={intake}/>
+    )}
+
+    <div className="footer">© PwC — 데이터 AI Readiness 자가진단</div>
+  </div>);
+}
+
+function Result({result,cfg,intake}){
+  const s=result.scores;
+  const dims=Object.values(s.dimensions);
+  return (
+  <div>
+    <div className="hero" style={{marginTop:24}}>
+      <h1>{intake.company} 진단 결과</h1>
+      <p>{intake.department} · {intake.target_process}</p>
+    </div>
+    <div className="card" style={{textAlign:"center"}}>
+      <div className="lvl-badge">레벨 <b>{s.overall.level}</b> <span>{s.overall.levelLabel}</span></div>
+      <p className="muted" style={{marginTop:12}}>{s.overall.levelDesc} · 평균 {s.overall.avg}/5</p>
+    </div>
+    <div className="card">
+      <h2>차원별 성숙도</h2>
+      {dims.map(d=>(
+        <div className="dimbar" key={d.key}>
+          <div className="row"><span><b>{d.name}</b> <span style={{color:"var(--sub)"}}>{d.desc}</span></span><span>Lv.{d.level}</span></div>
+          <div className="track"><i style={{width:(d.avg/5*100)+"%"}}/></div>
+        </div>
+      ))}
+    </div>
+    <div className="card">
+      <h2>맞춤 평가 리포트</h2>
+      {result.source==="fallback" && <p className="muted">※ 기본 요약본입니다.</p>}
+      <div className="report" dangerouslySetInnerHTML={{__html:md(result.report)}}/>
+    </div>
+    <div className="card" style={{textAlign:"center"}}>
+      <p className="muted">제출이 완료되었습니다. 담당 컨설턴트가 결과를 검토 후 연락드립니다.</p>
+      <p style={{fontSize:12,color:"var(--sub)"}}>진단 ID: {result.id}</p>
+    </div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
