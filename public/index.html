@@ -22,11 +22,7 @@
   /* ---- PwC header ---- */
   .topbar{background:#fff;border-bottom:4px solid var(--pwc-orange);position:sticky;top:0;z-index:10}
   .topbar-inner{max-width:780px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;gap:14px}
-  .pwc-logo{display:flex;flex-direction:column;line-height:1}
-  .pwc-word{font-weight:800;font-size:30px;letter-spacing:-1px;color:#000}
-  .pwc-bars{display:flex;gap:3px;margin-bottom:5px}
-  .pwc-bars span{width:13px;height:13px;display:block;transform:skewX(-12deg)}
-  .b1{background:#FFB600}.b2{background:#EB8C00}.b3{background:var(--pwc-rose)}.b4{background:var(--pwc-orange)}
+  .pwc-logo-img{height:42px;width:auto;display:block}
   .topbar-title{font-size:14px;color:var(--sub);border-left:1px solid var(--line);padding-left:14px}
   .topbar-title b{color:var(--ink);display:block;font-size:15px}
 
@@ -104,10 +100,7 @@
 <body>
 <div class="topbar">
   <div class="topbar-inner">
-    <div class="pwc-logo">
-      <div class="pwc-bars"><span class="b1"></span><span class="b2"></span><span class="b3"></span><span class="b4"></span></div>
-      <div class="pwc-word">pwc</div>
-    </div>
+    <img class="pwc-logo-img" src="/pwc-logo.png" alt="PwC" />
     <div class="topbar-title"><b>데이터 AI Readiness</b>자가진단</div>
   </div>
 </div>
