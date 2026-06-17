@@ -1,105 +1,92 @@
 /* =========================================================================
-   SQLite 저장소 (better-sqlite3)
-   - Railway Volume 에 영속 (DB_PATH 환경변수)
+   JSON 파일 저장소 (네이티브 모듈 없음 — Railway/Nixpacks 빌드 안전)
+   - DB_PATH(예: /data/data.db) 기준으로 같은 디렉터리에 store.json 으로 영속
+   - 기존 better-sqlite3 버전과 동일한 export 인터페이스 유지
    - submissions: 현업 제출 (답변 JSON + 자동점수 + AI평가)
    - evaluations: 평가자(컨설턴트) 수동 보정/코멘트
    ========================================================================= */
-import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, renameSync } from "node:fs";
+import { dirname, join } from "node:path";
 
+// 기존 DB_PATH(sqlite 파일 경로)와 호환: 같은 디렉터리에 JSON 저장
 const DB_PATH = process.env.DB_PATH || "./data/data.db";
+const DATA_DIR = dirname(DB_PATH);
+const STORE_PATH = join(DATA_DIR, "store.json");
+
 try {
-  mkdirSync(dirname(DB_PATH), { recursive: true });
+  mkdirSync(DATA_DIR, { recursive: true });
 } catch {}
 
-const db = new Database(DB_PATH);
-db.pragma("journal_mode = WAL");
+// ---------- 인메모리 상태 + 파일 영속 ----------
+let store = { submissions: [], evaluations: {} };
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS submissions (
-  id           TEXT PRIMARY KEY,
-  created_at   TEXT NOT NULL,
-  company      TEXT,
-  department   TEXT,
-  respondent   TEXT,
-  role         TEXT,
-  email        TEXT,
-  phone        TEXT,
-  industry     TEXT,
-  company_size TEXT,
-  target_process TEXT,
-  goal         TEXT,
-  envs         TEXT,          -- JSON array
-  answers      TEXT,          -- JSON object
-  scores       TEXT,          -- JSON object (결정론적 점수)
-  ai_report    TEXT,          -- Claude markdown
-  ai_source    TEXT,          -- claude | fallback
-  duration_ms  INTEGER,
-  status       TEXT DEFAULT 'submitted'  -- submitted | reviewing | done
-);
+function load() {
+  try {
+    if (existsSync(STORE_PATH)) {
+      const raw = readFileSync(STORE_PATH, "utf8");
+      const parsed = JSON.parse(raw);
+      store = {
+        submissions: Array.isArray(parsed.submissions) ? parsed.submissions : [],
+        evaluations: parsed.evaluations && typeof parsed.evaluations === "object" ? parsed.evaluations : {},
+      };
+    }
+  } catch (e) {
+    console.error("[db] store.json load failed, starting empty:", e?.message || e);
+    store = { submissions: [], evaluations: {} };
+  }
+}
 
-CREATE TABLE IF NOT EXISTS evaluations (
-  submission_id TEXT PRIMARY KEY,
-  updated_at    TEXT NOT NULL,
-  evaluator     TEXT,
-  override_level INTEGER,     -- 평가자 보정 종합 레벨
-  recommend_track TEXT,       -- P | G | both
-  grade         TEXT,         -- 종합 등급(예: A/B/C)
-  comment       TEXT,         -- 고객용 코멘트
-  internal_memo TEXT,         -- 내부 비공개 메모
-  FOREIGN KEY (submission_id) REFERENCES submissions(id)
-);
-`);
+function persist() {
+  // 원자적 쓰기: temp 파일에 쓰고 rename
+  const tmp = STORE_PATH + ".tmp";
+  writeFileSync(tmp, JSON.stringify(store, null, 2), "utf8");
+  renameSync(tmp, STORE_PATH);
+}
+
+load();
+
+// ---------- 공개 API (better-sqlite3 버전과 동일) ----------
 
 export function insertSubmission(s) {
-  const stmt = db.prepare(`
-    INSERT INTO submissions
-      (id, created_at, company, department, respondent, role, email, phone,
-       industry, company_size, target_process, goal, envs, answers, scores,
-       ai_report, ai_source, duration_ms, status)
-    VALUES
-      (@id, @created_at, @company, @department, @respondent, @role, @email, @phone,
-       @industry, @company_size, @target_process, @goal, @envs, @answers, @scores,
-       @ai_report, @ai_source, @duration_ms, @status)
-  `);
-  stmt.run(s);
+  // submissions 는 그대로 객체로 저장 (envs/answers/scores 는 index.js 에서 JSON 문자열로 들어옴)
+  store.submissions.push({ ...s });
+  persist();
 }
 
 export function getSubmission(id) {
-  const row = db.prepare("SELECT * FROM submissions WHERE id = ?").get(id);
+  const row = store.submissions.find((r) => r.id === id);
   if (!row) return null;
-  const ev = db.prepare("SELECT * FROM evaluations WHERE submission_id = ?").get(id);
-  return { ...parseRow(row), evaluation: ev || null };
+  const ev = store.evaluations[id] || null;
+  return { ...parseRow(row), evaluation: ev };
 }
 
 export function listSubmissions() {
-  const rows = db
-    .prepare(
-      `SELECT s.id, s.created_at, s.company, s.department, s.respondent, s.email,
-              s.goal, s.target_process, s.status, s.scores,
-              e.grade, e.override_level
-       FROM submissions s
-       LEFT JOIN evaluations e ON e.submission_id = s.id
-       ORDER BY s.created_at DESC`
-    )
-    .all();
-  return rows.map((r) => ({
-    ...r,
-    scores: safeParse(r.scores),
-  }));
+  // created_at 내림차순
+  const sorted = [...store.submissions].sort((a, b) =>
+    String(b.created_at).localeCompare(String(a.created_at))
+  );
+  return sorted.map((s) => {
+    const e = store.evaluations[s.id] || {};
+    return {
+      id: s.id,
+      created_at: s.created_at,
+      company: s.company,
+      department: s.department,
+      respondent: s.respondent,
+      email: s.email,
+      goal: s.goal,
+      target_process: s.target_process,
+      status: s.status,
+      scores: safeParse(s.scores),
+      grade: e.grade ?? null,
+      override_level: e.override_level ?? null,
+    };
+  });
 }
 
 export function upsertEvaluation(id, e) {
   const updated_at = new Date().toISOString();
-  db.prepare(
-    `INSERT INTO evaluations
-       (submission_id, updated_at, evaluator, override_level, recommend_track, grade, comment, internal_memo)
-     VALUES (@submission_id, @updated_at, @evaluator, @override_level, @recommend_track, @grade, @comment, @internal_memo)
-     ON CONFLICT(submission_id) DO UPDATE SET
-       updated_at=@updated_at, evaluator=@evaluator, override_level=@override_level,
-       recommend_track=@recommend_track, grade=@grade, comment=@comment, internal_memo=@internal_memo`
-  ).run({
+  store.evaluations[id] = {
     submission_id: id,
     updated_at,
     evaluator: e.evaluator ?? null,
@@ -108,15 +95,22 @@ export function upsertEvaluation(id, e) {
     grade: e.grade ?? null,
     comment: e.comment ?? null,
     internal_memo: e.internal_memo ?? null,
-  });
+  };
   // 상태 자동 갱신
-  db.prepare("UPDATE submissions SET status='done' WHERE id=?").run(id);
+  const sub = store.submissions.find((r) => r.id === id);
+  if (sub) sub.status = "done";
+  persist();
 }
 
 export function setStatus(id, status) {
-  db.prepare("UPDATE submissions SET status=? WHERE id=?").run(status, id);
+  const sub = store.submissions.find((r) => r.id === id);
+  if (sub) {
+    sub.status = status;
+    persist();
+  }
 }
 
+// ---------- helpers ----------
 function parseRow(r) {
   return {
     ...r,
@@ -126,11 +120,13 @@ function parseRow(r) {
   };
 }
 function safeParse(v) {
+  if (v == null) return null;
+  if (typeof v === "object") return v; // 이미 객체면 그대로
   try {
-    return v ? JSON.parse(v) : null;
+    return JSON.parse(v);
   } catch {
     return null;
   }
 }
 
-export default db;
+export default store;

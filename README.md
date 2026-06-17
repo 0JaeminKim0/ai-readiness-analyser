@@ -30,10 +30,11 @@
 | `/healthz` | GET | - | 헬스체크 |
 
 ## 데이터 구조 / 저장소
-- **저장소**: SQLite (`better-sqlite3`), `DB_PATH` 경로에 영속 (Railway Volume 권장)
-- **테이블**
-  - `submissions`: 응답자 정보 + `answers`(JSON) + `scores`(JSON) + `ai_report` + 상태
-  - `evaluations`: 평가자 보정 레벨/추천 트랙/등급/코멘트/내부메모
+- **저장소**: JSON 파일 (`store.json`) — 네이티브 모듈 없이 순수 Node.js. `DB_PATH`가 가리키는 디렉터리(예: `/data`)에 `store.json`으로 영속 (Railway Volume 권장)
+  - ※ 기존 `better-sqlite3`는 Railway/Nixpacks 빌드 시 네이티브 컴파일(Python/node-gyp) 문제로 제거함
+- **구조**
+  - `submissions[]`: 응답자 정보 + `answers`(JSON) + `scores`(JSON) + `ai_report` + 상태
+  - `evaluations{}`: 평가자 보정 레벨/추천 트랙/등급/코멘트/내부메모 (submission_id 키)
 
 ## 환경 변수 (`.env.example` 참고)
 | 변수 | 설명 |
@@ -42,7 +43,7 @@
 | `CLAUDE_MODEL` | 기본 `claude-opus-4-20250514` |
 | `CLAUDE_MAX_TOKENS` | 종합평가 출력 토큰 한계 (기본 **8000**, 기존 1000에서 상향) |
 | `ADMIN_PASSWORD` | `/admin` 접속 비밀번호 (**운영 시 반드시 변경**) |
-| `DB_PATH` | SQLite 경로 (Railway Volume: 예 `/data/data.db`) |
+| `DB_PATH` | 저장 디렉터리 기준 경로 (이 경로의 디렉터리에 `store.json` 생성. Railway Volume: 예 `/data/data.db` → `/data/store.json`) |
 | `PORT` | Railway가 자동 주입 |
 
 ## 로컬 실행
@@ -67,5 +68,5 @@ ANTHROPIC_API_KEY=sk-ant-... ADMIN_PASSWORD=mypw node server/index.js
 
 ## 배포 상태
 - **플랫폼**: Railway (Nixpacks)
-- **스택**: Node.js + Express + better-sqlite3 + React(CDN) + Anthropic SDK
+- **스택**: Node.js 20 + Express + JSON 파일 저장소 + React(로컬 vendor) + Anthropic SDK
 - **최종 업데이트**: 2026-06-17
