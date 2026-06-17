@@ -70,13 +70,9 @@ app.post("/api/submit", async (req, res) => {
       status: "submitted",
     });
 
-    res.json({
-      ok: true,
-      id,
-      scores,
-      report: evalResult.markdown,
-      source: evalResult.source,
-    });
+    // 현업에게는 결과(점수/리포트)를 노출하지 않는다. 접수 확인만 반환.
+    // 결과는 /admin 콘솔에서만 조회 가능.
+    res.json({ ok: true, received: true });
   } catch (err) {
     console.error("[submit] error:", err);
     res.status(500).json({ ok: false, error: String(err?.message || err) });

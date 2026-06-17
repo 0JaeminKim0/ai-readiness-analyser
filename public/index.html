@@ -91,6 +91,14 @@
   .spin{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--pwc-orange);border-radius:50%;animation:s 1s linear infinite;margin:30px auto}
   @keyframes s{to{transform:rotate(360deg)}}
   .footer{text-align:center;color:var(--sub);font-size:12px;margin-top:40px}
+
+  /* done screen */
+  .done-screen{display:flex;justify-content:center;padding-top:60px}
+  .done-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:48px 34px;text-align:center;max-width:480px;width:100%;box-shadow:0 8px 28px rgba(0,0,0,.06);animation:pop .35s ease}
+  .done-check{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,var(--pwc-rose),var(--pwc-orange));color:#fff;font-size:42px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;box-shadow:0 8px 22px rgba(224,48,30,.28)}
+  .done-card h1{margin:0 0 12px;font-size:26px;font-weight:800;color:var(--ink)}
+  .done-card p{margin:0;color:var(--sub);font-size:15px;line-height:1.7}
+  @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -107,35 +115,13 @@
 <script type="text/babel" data-type="script" data-presets="react">
 const { useState, useEffect, useMemo } = React;
 
-// 아주 가벼운 마크다운 렌더러 (h2/h3/ul/li/strong/blockquote/p)
-function md(src){
-  if(!src) return "";
-  const esc = s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  const lines = src.split("\n"); let html=""; let inUl=false;
-  const closeUl=()=>{ if(inUl){html+="</ul>";inUl=false;} };
-  for(let raw of lines){
-    let l = raw.trimEnd();
-    if(/^### /.test(l)){closeUl(); html+="<h3>"+inline(esc(l.slice(4)))+"</h3>";continue;}
-    if(/^## /.test(l)){closeUl(); html+="<h2>"+inline(esc(l.slice(3)))+"</h2>";continue;}
-    if(/^# /.test(l)){closeUl(); html+="<h2>"+inline(esc(l.slice(2)))+"</h2>";continue;}
-    if(/^> /.test(l)){closeUl(); html+="<blockquote style='border-left:4px solid #EB8C00;margin:10px 0;padding:6px 14px;background:#FFF8F2;color:#5A6473'>"+inline(esc(l.slice(2)))+"</blockquote>";continue;}
-    if(/^[-*] /.test(l)){ if(!inUl){html+="<ul>";inUl=true;} html+="<li>"+inline(esc(l.slice(2)))+"</li>";continue;}
-    if(l.trim()===""){closeUl(); continue;}
-    closeUl(); html+="<p>"+inline(esc(l))+"</p>";
-  }
-  closeUl();
-  function inline(s){return s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");}
-  return html;
-}
-
 function App(){
   const [cfg,setCfg]=useState(null);
-  const [step,setStep]=useState("intake"); // intake | goal | env | quiz | loading | result
+  const [step,setStep]=useState("intake"); // intake | goal | env | quiz | loading | done
   const [intake,setIntake]=useState({});
   const [goal,setGoal]=useState(null);
   const [envs,setEnvs]=useState([]);
   const [answers,setAnswers]=useState({});
-  const [result,setResult]=useState(null);
   const [err,setErr]=useState(null);
   const startRef = useMemo(()=>({t:Date.now()}),[]);
 
@@ -164,7 +150,7 @@ function App(){
       });
       const data = await res.json();
       if(!data.ok) throw new Error(data.error||"제출 실패");
-      setResult(data); setStep("result");
+      setStep("done");
       window.scrollTo(0,0);
     }catch(e){ setErr(String(e.message||e)); setStep("quiz"); }
   }
@@ -282,46 +268,19 @@ function App(){
       </div>
     )}
 
-    {/* STEP: result */}
-    {step==="result" && result && (
-      <Result result={result} cfg={cfg} intake={intake}/>
+    {/* STEP: done — 현업에게는 결과를 노출하지 않고 감사 안내로 종료 */}
+    {step==="done" && (
+      <div className="done-screen">
+        <div className="done-card">
+          <div className="done-check">✓</div>
+          <h1>감사합니다!</h1>
+          <p>자가진단이 정상적으로 제출되었습니다.<br/>
+             담당 컨설턴트가 결과를 검토한 뒤 회신드리겠습니다.</p>
+        </div>
+      </div>
     )}
 
     <div className="footer">© PwC — 데이터 AI Readiness 자가진단</div>
-  </div>);
-}
-
-function Result({result,cfg,intake}){
-  const s=result.scores;
-  const dims=Object.values(s.dimensions);
-  return (
-  <div>
-    <div className="hero" style={{marginTop:24}}>
-      <h1>{intake.company} 진단 결과</h1>
-      <p>{intake.department} · {intake.target_process}</p>
-    </div>
-    <div className="card" style={{textAlign:"center"}}>
-      <div className="lvl-badge">레벨 <b>{s.overall.level}</b> <span>{s.overall.levelLabel}</span></div>
-      <p className="muted" style={{marginTop:12}}>{s.overall.levelDesc} · 평균 {s.overall.avg}/5</p>
-    </div>
-    <div className="card">
-      <h2>차원별 성숙도</h2>
-      {dims.map(d=>(
-        <div className="dimbar" key={d.key}>
-          <div className="row"><span><b>{d.name}</b> <span style={{color:"var(--sub)"}}>{d.desc}</span></span><span>Lv.{d.level}</span></div>
-          <div className="track"><i style={{width:(d.avg/5*100)+"%"}}/></div>
-        </div>
-      ))}
-    </div>
-    <div className="card">
-      <h2>맞춤 평가 리포트</h2>
-      {result.source==="fallback" && <p className="muted">※ 기본 요약본입니다.</p>}
-      <div className="report" dangerouslySetInnerHTML={{__html:md(result.report)}}/>
-    </div>
-    <div className="card" style={{textAlign:"center"}}>
-      <p className="muted">제출이 완료되었습니다. 담당 컨설턴트가 결과를 검토 후 연락드립니다.</p>
-      <p style={{fontSize:12,color:"var(--sub)"}}>진단 ID: {result.id}</p>
-    </div>
   </div>);
 }
 

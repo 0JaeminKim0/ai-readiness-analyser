@@ -4,7 +4,8 @@
 
 ## 개요
 - **목표**: 기업의 데이터 성숙도를 레벨(1~5)로 진단하고, Claude Opus 기반 맞춤 평가 리포트를 제공
-- **흐름**: 현업이 `/` 에서 진단 응답 → 결정론적 점수 계산 + Claude 종합평가 → DB 저장 → 컨설턴트가 `/admin` 에서 검토·보정·코멘트
+- **흐름**: 현업이 `/` 에서 진단 응답 → 제출 시 **"감사합니다" 완료 화면으로 종료(결과 비공개)** → 백엔드에서 점수 계산 + Claude 종합평가 → DB 저장 → 컨설턴트만 `/admin` 에서 결과 검토·보정·코멘트
+- **결과 비공개 정책**: 현업 화면과 `/api/submit` 응답에는 점수·리포트가 일절 포함되지 않음. 결과는 오직 `/admin` 콘솔(비밀번호 인증)에서만 조회 가능
 - **브랜딩**: PwC 워드마크 + 주황 계열 컬러
 
 ## 주요 기능
@@ -21,7 +22,7 @@
 | `/` | GET | - | 현업용 진단 화면 (링크 배포 대상) |
 | `/admin` | GET | 화면 내 비밀번호 | 평가자 콘솔 |
 | `/api/config` | GET | - | 질문/메타 데이터 |
-| `/api/submit` | POST | - | 제출 → 점수+AI평가+저장 |
+| `/api/submit` | POST | - | 제출 → 점수+AI평가+저장 (응답은 `{ok,received}` 만, 결과 미반환) |
 | `/api/admin/submissions` | GET | `X-Admin-Key` | 응답 목록 |
 | `/api/admin/submissions/:id` | GET | `X-Admin-Key` | 응답 상세 |
 | `/api/admin/submissions/:id/evaluation` | POST | `X-Admin-Key` | 평가 저장 |
